@@ -16,6 +16,7 @@
   <main class="app-shell">
     <header class="topbar"><a class="brand" href="#" aria-label="Birthday home"><span class="brand-mark">✦</span> little moments</a><span class="top-note">MADE WITH LOVE <span>♡</span></span></header>
 
+    <!-- Step 1: Welcome -->
     <section id="welcomeStep" class="screen welcome-screen">
       <div class="welcome-art" aria-hidden="true"><span class="spark spark-a">✦</span><span class="spark spark-b">✧</span><div class="gift-illustration"><span>🎁</span></div><span class="orbit orbit-a"></span><span class="orbit orbit-b"></span></div>
       <p class="eyebrow">A LITTLE SOMETHING FOR YOU</p>
@@ -25,37 +26,68 @@
       <p class="micro-copy">A few lovely moments are waiting inside</p>
     </section>
 
+    <!-- Step 2: Photo Selection -->
     <section id="photoStep" class="screen upload-screen hidden">
       <div class="step-heading"><span class="step-count">01 <i>/ 03</i></span><span class="step-line"></span><span class="eyebrow">THE MEMORY BOX</span></div>
       <div class="section-intro"><p class="eyebrow">MAKE IT PERSONAL</p><h2 class="section-title">Add your <em>memories.</em></h2><p class="section-copy">Choose the photos or videos you'd like to include in this birthday surprise.</p></div>
+      
       <label class="field-label" for="nameInput">WHAT SHOULD WE CALL YOU?</label>
       <input id="nameInput" class="text-field" type="text" maxlength="24" placeholder="Your name (optional)" autocomplete="name">
       <input id="mediaInput" class="visually-hidden" type="file" accept="image/*,video/*" multiple>
-      <button id="chooseBtn" class="dropzone" type="button"><span class="upload-icon">↑</span><strong>Choose photos or videos</strong><span>Tap to browse your device</span><small>Up to 4 MB per file · Multiple files supported</small></button>
+      
+      <button id="chooseBtn" class="dropzone" type="button">
+        <span class="upload-icon">↑</span>
+        <strong>Choose photos or videos</strong>
+        <span>Tap to browse your device</span>
+        <small>Up to 4 MB per file · Multiple files supported</small>
+      </button>
+      
       <div id="fileList" class="file-list hidden" aria-live="polite"></div>
-      <label class="consent-row"><input id="consentCheck" type="checkbox"><span class="custom-check"></span><span>I agree to send the selected files to the birthday Telegram bot. I understand the files will be shared outside this website.</span></label>
-      <div class="upload-actions"><button id="uploadBtn" class="btn btn-primary" disabled>Send files & continue <span>↗</span></button><p id="selectionHint" class="hint" aria-live="polite">Choose at least one file and confirm consent to continue.</p></div>
-      <div id="progressPanel" class="progress-panel hidden" aria-live="polite">
-        <div class="progress-top"><div><span class="eyebrow">SENDING YOUR MEMORIES</span><strong id="progressStatus">Preparing files…</strong></div><strong id="progressPercent" class="progress-percent">0%</strong></div>
-        <div class="progress-track"><div id="progressFill" class="progress-fill"></div></div>
-        <div class="progress-bottom"><span id="progressCount">0 of 0 files sent</span><span id="progressSize">Waiting to upload</span></div>
-        <p id="uploadError" class="error-message hidden"></p>
+      
+      <!-- Sirf ek simple button jo seedha surprise start karega -->
+      <div class="upload-actions" style="margin-top: 20px;">
+        <button id="uploadBtn" class="btn btn-primary" disabled>Create Surprise ✨</button>
+        <p id="selectionHint" class="hint" aria-live="polite">Choose at least one file to continue.</p>
       </div>
     </section>
 
+    <!-- Step 3: Party Reveal -->
     <section id="partyStep" class="screen party-screen hidden">
       <div class="step-heading"><span class="step-count">02 <i>/ 03</i></span><span class="step-line"></span><span class="eyebrow">THE BIG REVEAL</span></div>
-      <div class="party-content"><div class="success-mark">✓</div><p class="eyebrow">ALL MEMORIES SENT</p><h1 class="hero-title">The magic<br>is <em>here.</em></h1><p class="hero-copy">Your files have been delivered successfully. Now, let's celebrate!</p>
-        <div class="memory-card"><img id="cardPhoto" alt="Your selected birthday memory"><div class="memory-shade"></div><div class="memory-caption"><span> A DAY TO REMEMBER</span><strong id="cardName">Happy Birthday</strong></div><span class="memory-spark">✦</span></div>
+      <div class="party-content">
+        <p class="eyebrow">A MOMENT FOR YOU</p>
+        <h1 class="hero-title">The magic<br>is <em>here.</em></h1>
+        <p class="hero-copy">Now, let's celebrate the person who makes every moment brighter!</p>
+        
+        <div class="memory-card">
+          <img id="cardPhoto" alt="Your selected birthday memory">
+          <div class="memory-shade"></div>
+          <div class="memory-caption"><span>A DAY TO REMEMBER</span><strong id="cardName">Happy Birthday</strong></div>
+          <span class="memory-spark">✦</span>
+        </div>
+        
         <button id="revealBtn" class="btn btn-primary">Open your birthday cake <span>↗</span></button>
       </div>
     </section>
     <footer class="footer"><span>✦</span> MADE FOR THE MOMENTS THAT MATTER</footer>
   </main>
 
+  <!-- Cake Popup -->
   <div id="cakePopup" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="cakeTitle">
-    <div class="modal-card"><button id="closeBtn" class="modal-close" aria-label="Close">×</button><div class="cake-glow">🎂</div><p class="eyebrow">A WISH JUST FOR YOU</p><h2 id="cakeTitle" class="modal-title">Make a wish.</h2><p id="cakeMessage" class="modal-copy">Close your eyes, make a wish, and cut the cake!</p><button id="cutBtn" class="btn btn-primary">Cut the cake <span>✦</span></button><div id="finalWish" class="final-wish hidden"><p>May your year be full of laughter, love and beautiful little surprises. Happy Birthday! ✨</p><button id="shareBtn" class="btn btn-secondary">Share this surprise ↗</button></div></div>
+    <div class="modal-card">
+      <button id="closeBtn" class="modal-close" aria-label="Close">×</button>
+      <div class="cake-glow">🎂</div>
+      <p class="eyebrow">A WISH JUST FOR YOU</p>
+      <h2 id="cakeTitle" class="modal-title">Make a wish.</h2>
+      <p id="cakeMessage" class="modal-copy">Close your eyes, make a wish, and cut the cake!</p>
+      <button id="cutBtn" class="btn btn-primary">Cut the cake <span>✦</span></button>
+      <div id="finalWish" class="final-wish hidden">
+        <p>May your year be full of laughter, love and beautiful little surprises. Happy Birthday! ✨</p>
+        <button id="shareBtn" class="btn btn-secondary">Share this surprise ↗</button>
+      </div>
+    </div>
   </div>
+  
   <div id="toast" class="toast" role="status"></div>
   <script src="app.js"></script>
 </body>
