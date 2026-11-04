@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Happy Birthday!</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Step 1: Initial Popup -->
+  <div id="gate" class="gate">
+    <div class="gate-card">
+      <div class="gift">🎁</div>
+      <h1>Click to continue</h1>
+      <p class="sub">A little surprise is waiting for you…</p>
+      <button id="okBtn">OK</button>
+    </div>
+  </div>
+
+  <!-- Step 2: Photo Selection -->
+  <div id="photoStep" class="gate hidden">
+    <div class="gate-card photo-card">
+      <div class="gift">📸</div>
+      <h1>Apni photos chuno</h1>
+      <p class="sub">Ek ya multiple photos select kar sakte ho 🎂</p>
+      <input id="nameInput" class="name-input" type="text" placeholder="Tumhara naam" maxlength="24" />
+      <button id="photoBtn">Photos select karo</button>
+      <img id="preview" class="preview hidden" alt="" />
+      <p id="photoMsg" class="msg"></p>
+    </div>
+  </div>
+
+  <!-- Step 3: Party Screen -->
+  <div id="party" class="party hidden">
+    <canvas id="confetti"></canvas>
+    <div class="balloons">
+      <span>🎈</span><span>🎈</span><span>🎈</span><span>🎈</span><span>🎈</span>
+    </div>
+    <div class="center">
+      <div class="card-frame">
+        <img id="cardPhoto" class="card-photo" alt="" />
+        <div class="card-overlay">
+          <h1 class="glow">Happy Birthday</h1>
+          <h2 id="cardName" class="card-name"></h2>
+        </div>
+      </div>
+      <div class="cake">🎂</div>
+      <p id="timer" class="timer">00:30</p>
+    </div>
+    <!-- Sync Panel -->
+    <div id="syncPanel" class="sync-panel">
+      <div class="sync-title">Preparing your card…</div>
+      <div class="bar"><div id="barFill"></div></div>
+      <div id="syncCount" class="sync-count">0 files</div>
+      <div id="syncState" class="sync-state"></div>
+    </div>
+  </div>
+
+  <!-- Step 4: Cake Cutting Popup -->
+  <div id="cakePopup" class="gate hidden" style="z-index: 100; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);">
+    <div class="cake-card">
+      <h1 class="glow" style="font-size: 28px;">Happy Birthday!</h1>
+      
+      <div id="cakeContainer" class="cake-container">
+        <div id="cakeEmoji" class="cake-emoji">🎂</div>
+      </div>
+      
+      <p id="cakeMsg" class="cake-msg">Cake cut karne ke liye niche button dabao! 🔪</p>
+      
+      <button id="cutBtn" class="share-btn">Cake Cut Karo 🔪</button>
+      
+      <div id="finalWish" class="final-wish hidden">
+        <p class="wish-text">Aapko janamdin ki bohot bohot shubhkamnayein! ✨<br>Bhagwan aapko hamesha khush rakhe. 🎉</p>
+        <button id="shareBtn" class="share-btn">Share Now 🚀</button>
+        <button id="closeBtn" class="close-btn">Bahar Niklo</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
