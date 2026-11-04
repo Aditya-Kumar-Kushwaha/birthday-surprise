@@ -162,7 +162,7 @@ uploadBtn.addEventListener("click", async () => {
       if (uploadedFiles.has(file)) continue;
       progressStatus.textContent = "Sending " + file.name;
       await uploadOne(file, fraction => {
-        const liveBytes = completedBytes + file.size * fraction;
+        const liveBytes = completedBytes + file.size * Math.min(fraction, 0.98);
         setProgress(totalBytes ? liveBytes / totalBytes * 100 : 0);
         progressSize.textContent = formatBytes(liveBytes) + " of " + formatBytes(totalBytes);
       });
@@ -206,7 +206,6 @@ function showError(message) {
 $("revealBtn").addEventListener("click", () => $("cakePopup").classList.remove("hidden"));
 $("closeBtn").addEventListener("click", () => $("cakePopup").classList.add("hidden"));
 $("cutBtn").addEventListener("click", () => {
-  $("cake-glow");
   document.querySelector(".cake-glow").textContent = "🍰";
   $("cakeTitle").textContent = "Happy Birthday!";
   $("cakeMessage").classList.add("hidden");
