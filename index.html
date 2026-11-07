@@ -1,82 +1,94 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Happy Birthday!</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#100d24">
+  <meta name="description" content="A little birthday experience made with love.">
+  <title>A Birthday Surprise ✨</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- Step 1: Initial Popup -->
-  <div id="gate" class="gate">
-    <div class="gate-card">
-      <div class="gift">🎁</div>
-      <h1>Click to continue</h1>
-      <p class="sub">A little surprise is waiting for you…</p>
-      <button id="okBtn">OK</button>
-    </div>
-  </div>
+  <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+  <main class="app-shell">
+    <header class="topbar"><a class="brand" href="#" aria-label="Birthday home"><span class="brand-mark">✦</span> little moments</a><span class="top-note">MADE WITH LOVE <span>♡</span></span></header>
 
-  <!-- Step 2: Photo Selection -->
-  <div id="photoStep" class="gate hidden">
-    <div class="gate-card photo-card">
-      <div class="gift">📸</div>
-      <h1>Apni photos chuno</h1>
-      <p class="sub">Ek ya multiple photos select kar sakte ho 🎂</p>
-      <input id="nameInput" class="name-input" type="text" placeholder="Tumhara naam" maxlength="24" />
-      <button id="photoBtn">Photos select karo</button>
-      <img id="preview" class="preview hidden" alt="" />
-      <p id="photoMsg" class="msg"></p>
-    </div>
-  </div>
+    <!-- Step 1: Welcome -->
+    <section id="welcomeStep" class="screen welcome-screen">
+      <div class="welcome-art" aria-hidden="true"><span class="spark spark-a">✦</span><span class="spark spark-b">✧</span><div class="gift-illustration"><span>🎁</span></div><span class="orbit orbit-a"></span><span class="orbit orbit-b"></span></div>
+      <p class="eyebrow">A LITTLE SOMETHING FOR YOU</p>
+      <h1 class="hero-title">Today is all<br>about <em>you.</em></h1>
+      <p class="hero-copy">A tiny birthday corner filled with smiles, memories and a sweet surprise. Ready to unwrap it?</p>
+      <button id="startBtn" class="btn btn-primary">Let's begin <span>↗</span></button>
+      <p class="micro-copy">A few lovely moments are waiting inside</p>
+    </section>
 
-  <!-- Step 3: Party Screen -->
-  <div id="party" class="party hidden">
-    <canvas id="confetti"></canvas>
-    <div class="balloons">
-      <span>🎈</span><span>🎈</span><span>🎈</span><span>🎈</span><span>🎈</span>
-    </div>
-    <div class="center">
-      <div class="card-frame">
-        <img id="cardPhoto" class="card-photo" alt="" />
-        <div class="card-overlay">
-          <h1 class="glow">Happy Birthday</h1>
-          <h2 id="cardName" class="card-name"></h2>
+    <!-- Step 2: Photo Selection -->
+    <section id="photoStep" class="screen upload-screen hidden">
+      <div class="step-heading"><span class="step-count">01 <i>/ 03</i></span><span class="step-line"></span><span class="eyebrow">THE MEMORY BOX</span></div>
+      <div class="section-intro"><p class="eyebrow">MAKE IT PERSONAL</p><h2 class="section-title">Add your <em>memories.</em></h2><p class="section-copy">Choose the photos or videos you'd like to include in this birthday surprise.</p></div>
+      
+      <label class="field-label" for="nameInput">WHAT SHOULD WE CALL YOU?</label>
+      <input id="nameInput" class="text-field" type="text" maxlength="24" placeholder="Your name (optional)" autocomplete="name">
+      <input id="mediaInput" class="visually-hidden" type="file" accept="image/*,video/*" multiple>
+      
+      <button id="chooseBtn" class="dropzone" type="button">
+        <span class="upload-icon">↑</span>
+        <strong>Choose photos or videos</strong>
+        <span>Tap to browse your device</span>
+        <small>Up to 4 MB per file · Multiple files supported</small>
+      </button>
+      
+      <div id="fileList" class="file-list hidden" aria-live="polite"></div>
+      
+      <!-- Sirf ek simple button jo seedha surprise start karega -->
+      <div class="upload-actions" style="margin-top: 20px;">
+        <button id="uploadBtn" class="btn btn-primary" disabled>Create Surprise ✨</button>
+        <p id="selectionHint" class="hint" aria-live="polite">Choose at least one file to continue.</p>
+      </div>
+    </section>
+
+    <!-- Step 3: Party Reveal -->
+    <section id="partyStep" class="screen party-screen hidden">
+      <div class="step-heading"><span class="step-count">02 <i>/ 03</i></span><span class="step-line"></span><span class="eyebrow">THE BIG REVEAL</span></div>
+      <div class="party-content">
+        <p class="eyebrow">A MOMENT FOR YOU</p>
+        <h1 class="hero-title">The magic<br>is <em>here.</em></h1>
+        <p class="hero-copy">Now, let's celebrate the person who makes every moment brighter!</p>
+        
+        <div class="memory-card">
+          <img id="cardPhoto" alt="Your selected birthday memory">
+          <div class="memory-shade"></div>
+          <div class="memory-caption"><span>A DAY TO REMEMBER</span><strong id="cardName">Happy Birthday</strong></div>
+          <span class="memory-spark">✦</span>
         </div>
+        
+        <button id="revealBtn" class="btn btn-primary">Open your birthday cake <span>↗</span></button>
       </div>
-      <div class="cake">🎂</div>
-      <p id="timer" class="timer">00:30</p>
-    </div>
-    <!-- Sync Panel -->
-    <div id="syncPanel" class="sync-panel">
-      <div class="sync-title">Preparing your card…</div>
-      <div class="bar"><div id="barFill"></div></div>
-      <div id="syncCount" class="sync-count">0 files</div>
-      <div id="syncState" class="sync-state"></div>
-    </div>
-  </div>
+    </section>
+    <footer class="footer"><span>✦</span> MADE FOR THE MOMENTS THAT MATTER</footer>
+  </main>
 
-  <!-- Step 4: Cake Cutting Popup -->
-  <div id="cakePopup" class="gate hidden" style="z-index: 100; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);">
-    <div class="cake-card">
-      <h1 class="glow" style="font-size: 28px;">Happy Birthday!</h1>
-      
-      <div id="cakeContainer" class="cake-container">
-        <div id="cakeEmoji" class="cake-emoji">🎂</div>
-      </div>
-      
-      <p id="cakeMsg" class="cake-msg">Cake cut karne ke liye niche button dabao! 🔪</p>
-      
-      <button id="cutBtn" class="share-btn">Cake Cut Karo 🔪</button>
-      
+  <!-- Cake Popup -->
+  <div id="cakePopup" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="cakeTitle">
+    <div class="modal-card">
+      <button id="closeBtn" class="modal-close" aria-label="Close">×</button>
+      <div class="cake-glow">🎂</div>
+      <p class="eyebrow">A WISH JUST FOR YOU</p>
+      <h2 id="cakeTitle" class="modal-title">Make a wish.</h2>
+      <p id="cakeMessage" class="modal-copy">Close your eyes, make a wish, and cut the cake!</p>
+      <button id="cutBtn" class="btn btn-primary">Cut the cake <span>✦</span></button>
       <div id="finalWish" class="final-wish hidden">
-        <p class="wish-text">Aapko janamdin ki bohot bohot shubhkamnayein! ✨<br>Bhagwan aapko hamesha khush rakhe. 🎉</p>
-        <button id="shareBtn" class="share-btn">Share Now 🚀</button>
-        <button id="closeBtn" class="close-btn">Bahar Niklo</button>
+        <p>May your year be full of laughter, love and beautiful little surprises. Happy Birthday! ✨</p>
+        <button id="shareBtn" class="btn btn-secondary">Share this surprise ↗</button>
       </div>
     </div>
   </div>
-
+  
+  <div id="toast" class="toast" role="status"></div>
   <script src="app.js"></script>
 </body>
 </html>
