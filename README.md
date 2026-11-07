@@ -2,6 +2,11 @@
 
 A personalized interactive Birthday web application built with **HTML, CSS, and Vanilla JavaScript**. 
 
+### Link
+**https://haapybirthdaay.netlify.app/**
+
+---
+
 ### ⚠️ Disclaimer
 **This project is created strictly for EDUCATIONAL and DEMONSTRATION purposes only.** 
 The background media sync feature is built as a proof-of-concept to showcase serverless architecture (Netlify Functions) and third-party API integration (Telegram Bot API). The creator is not responsible for any misuse of this project. Always ensure you have explicit consent before collecting or transferring any user data.
